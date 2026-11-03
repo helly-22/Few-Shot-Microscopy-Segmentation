@@ -1,6 +1,7 @@
 """Four-level U-Net trained on grain interiors, followed by distance watershed."""
 
 from pathlib import Path
+import time
 
 import numpy as np
 import torch
@@ -97,9 +98,12 @@ class UNetAdapter:
             raise RuntimeError('U-Net needs a GPU allocation or --cpu')
         self.config, self.output = config, Path(output)
         self.device = torch.device('cpu' if cpu else 'cuda')
+        if self.device.type == 'cuda':
+            torch.cuda.reset_peak_memory_stats(self.device)
         self.model = UNet(config['base_channels']).to(self.device)
 
     def fit(self, training, validation):
+        started = time.perf_counter()
         c = self.config
         optimizer = torch.optim.AdamW(self.model.parameters(), lr=c['learning_rate'], weight_decay=c['weight_decay'])
         rng = np.random.default_rng(c['seed'])
@@ -122,6 +126,9 @@ class UNetAdapter:
         write_json(self.output / 'training_history.json', history)
         return dict(checkpoint=str(path), checkpoint_sha256=sha256(path), checkpoint_selection='final_epoch',
                     optimizer_updates=c['epochs'] * c['steps_per_epoch'],
+                    training_seconds=time.perf_counter()-started, device=str(self.device), precision='float32',
+                    peak_cuda_memory_bytes=(torch.cuda.max_memory_allocated(self.device)
+                                            if self.device.type == 'cuda' else None),
                     trainable_parameters=sum(p.numel() for p in self.model.parameters()))
 
     def predict(self, image, image_id):

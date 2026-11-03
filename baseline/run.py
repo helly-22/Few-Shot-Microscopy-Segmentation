@@ -117,6 +117,7 @@ def run(args):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     metadata = dict(status='started', method=args.method, config=config, split=selection,
+                    requested_device='cpu' if args.cpu else 'gpu',
                     evaluation_split=args.evaluate_split,
                     annotation_images_used=0 if zero_shot else len(selection['train']),
                     protocol='baseline_suite_v1', manifest_sha256=sha256(args.manifest),

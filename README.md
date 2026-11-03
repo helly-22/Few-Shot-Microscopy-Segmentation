@@ -14,6 +14,9 @@ The runner integration test uses a mock model.
 
 ## Comparison baselines
 
+**Limited compute:** start with the [small U-Net + watershed run](baseline/SMALL_MODEL.md)
+(485,817 parameters, CPU or one GPU, validation-only first experiment).
+
 The **[baseline suite](baseline/README.md)** contains separate adapters, pinned
 environments, configurations, shared splits/evaluation, Unity jobs, and
 [paper citations](baseline/references.bib) for:

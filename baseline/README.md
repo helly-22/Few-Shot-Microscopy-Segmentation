@@ -4,6 +4,10 @@ This folder contains implementations, pinned environments, configurations,
 citations, and Unity job scripts for every requested comparison. None of these
 methods uses the Voronoi consistency loss.
 
+For limited compute, start with the **[485k-parameter U-Net profile](SMALL_MODEL.md)**.
+It has a minimal environment, CPU/older-GPU job templates, and a short two-image
+training run evaluated on validation images before the full suite.
+
 | Method / identifier | Role | Implementation |
 | --- | --- | --- |
 | Cellpose-SAM / `cellpose_sam` | Essential control for a future matched Voronoi intervention | Native full-network fine-tuning, cpsam weights, Cellpose 4.0.6 |
