@@ -1,0 +1,10 @@
+{
+  "checked_on": "2026-11-03",
+  "paper": "https://arxiv.org/html/2604.18957v1",
+  "authors_repository": "https://github.com/mueez-overflow/ASTM-Grain-Size-Estimator",
+  "authors_commit": "80f305e9ae10d3f845914f6d773ecd2f8fcea651",
+  "cellpose_version": "4.0.6",
+  "cellpose_version_status": "reconstruction choice; authors did not identify an exact version",
+  "cpsam_revision": "7c61431b5fbb078f3296754bd15d9f51b320f837",
+  "cpsam_sha256": "e1440429eb384f95afe32bcba6510f90d518eaedc917ede549bed6804004abe2"
+}
