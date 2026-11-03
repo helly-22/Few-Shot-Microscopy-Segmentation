@@ -1,0 +1,4 @@
+{
+  "method": "watershed", "sigma": 1.0, "threshold_offset": 0.0, "bright_interiors": true,
+  "min_distance": 12, "min_area": 200
+}

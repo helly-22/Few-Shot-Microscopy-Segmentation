@@ -1,0 +1,5 @@
+{
+  "method": "cellpose2", "epochs": 100, "steps_per_epoch": 30, "batch_size": 2,
+  "learning_rate": 0.1, "weight_decay": 0.00001,
+  "flow_threshold": 0.4, "cellprob_threshold": 0.0, "min_area": 200
+}

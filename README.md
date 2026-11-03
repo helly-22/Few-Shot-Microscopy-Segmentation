@@ -12,10 +12,28 @@ into the baseline trainer**.
 training, Unity smoke testing, and replication of published results are pending.
 The runner integration test uses a mock model.
 
+## Comparison baselines
+
+The **[baseline suite](baseline/README.md)** contains separate adapters, pinned
+environments, configurations, shared splits/evaluation, Unity jobs, and
+[paper citations](baseline/references.bib) for:
+
+- Cellpose-SAM without Voronoi (essential geometry control).
+- Cellpose 2.0 and Cellpose 3.
+- U-Net followed by watershed instance separation.
+- SAM 2.1 with repeatable image-derived prompts.
+- StarDist 2D.
+- Classical marker-controlled watershed.
+
+Use `python -m baseline --help` and the suite guide to run these comparisons.
+The original paper reconstruction below remains a separate protocol; suite
+results must not be compared against its published numbers as if metrics matched.
+
 ## Repository structure
 
 ```text
 configs/                 Published benchmark targets and upstream version references
+baseline/                Multi-method suite, environments, configurations, and citations
 docs/                    Unity guide, source audit, and H1 experimental protocol
 hpc/                     Unity environment setup, asset fetching, and Slurm jobs
 requirements/            Pinned baseline dependencies

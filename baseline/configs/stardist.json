@@ -1,0 +1,5 @@
+{
+  "method": "stardist", "epochs": 100, "steps_per_epoch": 30, "batch_size": 2,
+  "learning_rate": 0.0003, "patch_size": 256, "n_rays": 32,
+  "probability_threshold": 0.5, "nms_threshold": 0.4
+}

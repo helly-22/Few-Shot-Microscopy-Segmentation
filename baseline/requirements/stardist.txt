@@ -1,0 +1,5 @@
+-r common.txt
+tensorflow[and-cuda]==2.15.1; platform_system == "Linux"
+tensorflow==2.15.1; platform_system != "Linux"
+stardist==0.9.1
+csbdeep==0.8.1

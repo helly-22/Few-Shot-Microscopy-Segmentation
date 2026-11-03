@@ -21,3 +21,8 @@ research/
 *.tiff
 *.zip
 *.tar.gz
+.baseline-envs/
+*.h5
+*.hdf5
+build/
+*.whl

@@ -16,10 +16,17 @@ data = ["Pillow>=10", "tifffile>=2024.8.30", "scikit-image>=0.24"]
 [project.scripts]
 voron-baseline = "voron_matsam.baseline:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+packages = ["voron_matsam", "baseline", "baseline.models"]
+
+[tool.setuptools.package-dir]
+voron_matsam = "src/voron_matsam"
+baseline = "baseline"
+
+[tool.setuptools.package-data]
+baseline = ["configs/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 addopts = "-ra"

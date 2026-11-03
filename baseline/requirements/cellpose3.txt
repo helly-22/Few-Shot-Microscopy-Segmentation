@@ -1,0 +1,4 @@
+-r common.txt
+cellpose==3.1.1.1
+opencv-python-headless==4.10.0.84
+imagecodecs==2024.9.22

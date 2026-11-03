@@ -1,0 +1,5 @@
+{
+  "method": "sam2", "sigma": 1.0, "threshold_offset": 0.0, "bright_interiors": true,
+  "max_prompts": 512, "quality_threshold": 0.5, "max_mask_fraction": 0.5,
+  "min_distance": 12, "min_area": 200
+}
