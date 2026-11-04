@@ -25,6 +25,24 @@ source-only transfer archive with `python scripts/build_unity_bundle.py` locally
 
 ## Install and prepare
 
+To queue the complete workflow from the login node, run:
+
+```bash
+bash hpc/submit_reproduction.sh --account=YOUR_UNITY_ACCOUNT
+```
+
+This submits a CPU preparation job, a GPU smoke test, the six-run baseline array
+(one GPU at a time), and a CPU comparison job. Each stage requires successful
+completion of the previous stage. Preparation installs the environment, runs the
+tests, downloads and verifies the data and checkpoint, and audits the prepared
+data. The launcher prints job IDs and saves them in a new
+`outputs/paper-<UTC timestamp>/jobs.tsv`. Results and the final
+`paper_comparison.json` are saved under that same run directory. Use `squeue --me`
+to check progress and inspect the corresponding files in `logs/` for failures.
+Submission alone does not establish that training or reproduction succeeded.
+
+For manual control over each stage, follow the steps below.
+
 Request an interactive CPU allocation for installation and image preparation:
 
 ```bash
@@ -75,14 +93,14 @@ test image. Its results are marked `smoke_test_only` and excluded from paper
 comparisons. Check `logs/smoke-JOBID.out`, `logs/smoke-JOBID.err` and the final
 `outputs/smoke-JOBID/run.json` status before launching the full sweep.
 
-GPU templates use the regular `gpu` partition and constrain devices to A40, A100,
+GPU templates use the `gpu-highvram` partition and constrain devices to A40, A100,
 L40S or H100: CUDA-compatible, BF16-capable choices with substantial VRAM. Unity's
 [GPU guide](https://docs.unity.rc.umass.edu/documentation/tools/gpus/) explains GPU
 requests, and its [feature list](https://docs.unity.rc.umass.edu/documentation/cluster_specs/features/)
 documents the model names. These requests are starting resource estimates; wall
 time and memory still need validation on your allocation. The environment targets
 x86 Linux CUDA GPUs; Grace Hopper and Blackwell require a separately validated
-software build. Prefer the regular partition for these jobs: automatic resume
+software build. Prefer this nonpreempting partition for these jobs: automatic resume
 after preemption is not implemented.
 
 ## Run the paper baseline sweep

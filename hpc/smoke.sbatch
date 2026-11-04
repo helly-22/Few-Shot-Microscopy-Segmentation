@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=grain-smoke
-#SBATCH --partition=gpu
+#SBATCH --partition=gpu-highvram
 #SBATCH --gpus=1
 #SBATCH --constraint=a40|a100|l40s|h100
 #SBATCH --cpus-per-task=4
@@ -22,4 +22,4 @@ nvidia-smi
     --manifest "$PROJECT_ROOT/data/processed/paper-bright/manifest.json" \
     --checkpoint "$PROJECT_ROOT/data/models/cpsam" \
     --split 05 --seed 0 --epochs 2 --aug-multiplier 1 --limit-test-images 1 \
-    --output "$PROJECT_ROOT/outputs/smoke-${SLURM_JOB_ID}"
+    --output "${SMOKE_OUTPUT:-$PROJECT_ROOT/outputs/smoke-${SLURM_JOB_ID}}"

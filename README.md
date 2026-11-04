@@ -8,9 +8,13 @@ full-network fine-tuning. The geometry module provides a differentiable weighted
 Voronoi layer for a subsequent controlled experiment; it is **not yet integrated
 into the baseline trainer**.
 
-**Status:** local unit and orchestration tests pass. Actual Cellpose-SAM GPU
-training, Unity smoke testing, and replication of published results are pending.
-The runner integration test uses a mock model.
+**Status (November 4, 2026):** all six original Cellpose-SAM Unity runs and the
+subsequent data/precision diagnostics completed. The original fine-tuned runs
+fell below the paper; the new float32 2-shot control reached AP50 0.6565
+(paper: 0.6457), with reconstruction limitations documented in the
+[ordered reproduction checklist](docs/REPRODUCTION_CHECKLIST.md).
+Old runs remain available under their original protocol. Local tests
+include both numerical checks and mock-model orchestration checks.
 
 ## Comparison baselines
 

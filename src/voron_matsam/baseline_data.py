@@ -111,6 +111,27 @@ def boundary_to_instances(mask, polarity="bright", min_size=200):
     return compact_labels(separated)
 
 
+def connected_instances(mask, polarity="bright", min_size=200):
+    """Validated variant: erode, label with 4-connectivity, filter, save uint16.
+
+    This deliberately differs from the released label-before-erosion routine,
+    which can assign a single ID to disconnected surviving fragments.
+    """
+    if polarity not in ("bright", "dark"):
+        raise ValueError("polarity must be bright or dark")
+    if np.asarray(mask).ndim != 2 or min_size < 1:
+        raise ValueError("Need a 2D mask and positive minimum area")
+    interior = mask >= 128 if polarity == "bright" else mask < 128
+    eroded = ndi.binary_erosion(interior, structure=disk(1), border_value=1)
+    labels, _ = ndi.label(eroded)
+    sizes = np.bincount(labels.ravel())
+    labels[sizes[labels] < min_size] = 0
+    labels = compact_labels(labels)
+    if labels.max() > np.iinfo(np.uint16).max:
+        raise ValueError("Instance count exceeds uint16 capacity")
+    return labels.astype(np.uint16)
+
+
 def archive_groups(archive):
     patterns = {
         "image": re.compile(r"^GRAIN DATA SET/RG/RG(\d+)_(\d+)_(\d+)\.jpg$"),
@@ -150,9 +171,14 @@ def stitch(archive, tiles, mode):
                            for r in range(1, 4)], axis=0)
 
 
-def prepare_dataset(archive_path, output, polarity="bright", split_seed=42):
+def prepare_dataset(archive_path, output, polarity="bright", split_seed=42,
+                    label_policy="released"):
     import tifffile
 
+    if label_policy not in ("released", "connected_uint16"):
+        raise ValueError("Unknown label policy")
+    if sha256(archive_path) != DATA_SHA256:
+        raise ValueError("Source archive differs from pinned dataset")
     output = Path(output)
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"Refusing to mix prepared datasets in {output}")
@@ -167,7 +193,8 @@ def prepare_dataset(archive_path, output, polarity="bright", split_seed=42):
             mask = stitch(archive, groups[sid]["mask"], "L")
             if image.shape[:2] != mask.shape:
                 raise ValueError(f"Image/mask dimensions differ for {sid}")
-            labels = boundary_to_instances(mask, polarity)
+            converter = connected_instances if label_policy == "connected_uint16" else boundary_to_instances
+            labels = converter(mask, polarity)
             if labels.max() < 5:
                 raise ValueError(f"Only {labels.max()} objects in {sid}; inspect mask polarity")
             image_path, mask_path = f"images/{sid}_img.png", f"instances/{sid}_masks.tif"
@@ -190,6 +217,15 @@ def prepare_dataset(archive_path, output, polarity="bright", split_seed=42):
                     grouping="source micrograph; physical specimen IDs unavailable",
                     train_order=order[:30], test=order[30:],
                     fractions={key: order[:n] for key, n in FRACTIONS.items()}, records=records)
+    if label_policy == "connected_uint16":
+        manifest.update(schema_version=2, label_policy=label_policy,
+                        connectivity=4, mask_dtype="uint16", erosion_border_value=1,
+                        split_ordering="bare_image_id_lexical_legacy_continuity",
+                        validation=order[25:30],
+                        validation_policy="2/4/10/20-shot training excludes validation; "
+                        "30-shot final refit only after settings frozen on smaller fits",
+                        calibration=dict(pixels_per_um=2.26,
+                                         status="released_code_numeric_value; physical scale unverified"))
     write_json(output / "manifest.json", manifest)
     print(f"Prepared {len(records)} micrographs; 30 training pool / 10 test")
     return manifest
@@ -208,6 +244,12 @@ def load_manifest(path, verify=True):
     for key, subset in manifest["fractions"].items():
         if subset != train_ids[:len(subset)] or set(subset) & set(test_ids):
             raise ValueError(f"Non-nested/leaking split {key}")
+    if manifest.get('schema_version') == 2:
+        validation = manifest.get('validation', [])
+        if (not validation or len(set(validation)) != len(validation)
+                or not set(validation) <= set(train_ids)
+                or set(validation) & set(manifest['fractions']['50'])):
+            raise ValueError('Invalid validation split for connected-v2 protocol')
     for record in records.values():
         for key in ("image", "mask", "raw_mask"):
             full = (path.parent / record[key]).resolve()
@@ -215,4 +257,12 @@ def load_manifest(path, verify=True):
                 raise ValueError("Dataset path escapes manifest directory")
             if verify and sha256(full) != record[f"sha256_{key}"]:
                 raise ValueError(f"Dataset file changed: {full}")
+        if verify and manifest.get('schema_version') == 2:
+            import tifffile
+            from skimage.measure import label
+            labels = tifffile.imread(path.parent / record['mask'])
+            ids, sizes = np.unique(labels[labels > 0], return_counts=True)
+            if (labels.dtype != np.uint16 or not len(ids) or sizes.min() < manifest['min_area']
+                    or label(labels, connectivity=1, background=0).max() != len(ids)):
+                raise ValueError(f'Invalid connected uint16 ground truth: {record["image_id"]}')
     return manifest, records, path.parent

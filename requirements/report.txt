@@ -1,0 +1,2 @@
+# Install into the existing pinned baseline environment for static report figures.
+matplotlib==3.9.4

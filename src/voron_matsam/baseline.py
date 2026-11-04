@@ -108,23 +108,8 @@ def fit_model(model, images, labels, output, epochs, batch_size):
 
 
 def score_segmentation(truth, prediction):
-    from cellpose import metrics
-    from skimage.segmentation import find_boundaries
-    truth, prediction = compact_labels(truth), compact_labels(prediction)
-    thresholds = np.linspace(.5, .95, 10)
-    ap, _, _, _ = metrics.average_precision([truth], [prediction], threshold=thresholds)
-    # Match released metric: outer boundaries, disk(2) dilation, disk(3) tolerance.
-    gt_bd = ndi.binary_dilation(find_boundaries(truth, mode="outer"), structure=disk(2))
-    pred_bd = ndi.binary_dilation(find_boundaries(prediction, mode="outer"), structure=disk(2))
-    gt_tol = ndi.binary_dilation(gt_bd, structure=disk(3))
-    pred_tol = ndi.binary_dilation(pred_bd, structure=disk(3))
-    precision = np.logical_and(pred_bd, gt_tol).sum() / (pred_bd.sum() + 1e-7)
-    recall = np.logical_and(gt_bd, pred_tol).sum() / (gt_bd.sum() + 1e-7)
-    f1 = 2 * precision * recall / (precision + recall + 1e-7)
-    binary = (prediction > 0) & ~pred_bd
-    return dict(ap50=float(ap[0, 0]), map_50_95=float(np.mean(ap)),
-                boundary_f1=float(f1), count_error=int(prediction.max()) - int(truth.max()),
-                gt_count=int(truth.max()), pred_count=int(prediction.max())), binary
+    from .paper_metrics import score_instances
+    return score_instances(truth, prediction)
 
 
 def aggregate_jeffries(rows):
@@ -168,11 +153,14 @@ def run_baseline(args):
                     source_sha256={file.name: sha256(file) for file in sorted(Path(__file__).parent.glob('*.py'))},
                     protocol="reconstructed_cellpose_baseline", trainable="full_network",
                     manifest_split_status=manifest["split_status"])
+    metadata['label_policy'] = manifest.get('label_policy', 'released_label_before_erosion')
+    metadata['evaluator'] = 'paper_metrics_v1_outer_disk2_tolerance3'
     write_json(output / "run.json", metadata)
     freeze = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True, check=True)
     (output / "pip-freeze.txt").write_text(freeze.stdout, encoding="utf-8")
     model = models.CellposeModel(gpu=not args.cpu, pretrained_model=str(checkpoint),
                                  use_bfloat16=not args.float32)
+    metadata['model_parameter_dtype'] = str(getattr(model.net, 'dtype', 'unavailable'))
     if args.split != "zero":
         images, labels = load_training_data(manifest["fractions"][args.split], records,
                                              root, args.aug_multiplier)
@@ -188,6 +176,8 @@ def run_baseline(args):
                                      use_bfloat16=not args.float32)
     for folder in ("instances", "binary_masks"):
         (output / folder).mkdir()
+    if getattr(args, 'save_raw', False):
+        (output / 'raw_outputs').mkdir()
     segmentation_rows, jeffries_rows = [], []
     test_ids = manifest["test"][:args.limit_test_images] if args.limit_test_images else manifest["test"]
     for sid in test_ids:
@@ -195,10 +185,16 @@ def run_baseline(args):
         with Image.open(root / record["image"]) as f:
             image = np.array(f.convert("RGB"))
         truth = tifffile.imread(root / record["mask"])
-        pred, _, _ = model.eval(image, channel_axis=-1, diameter=None, batch_size=8,
+        pred, flows, _ = model.eval(image, channel_axis=-1, diameter=None, batch_size=8,
                                 flow_threshold=.4, cellprob_threshold=0., min_size=15,
                                 max_size_fraction=.4, niter=None, augment=False,
                                 tile_overlap=.1, bsize=256, normalize=True)
+        if getattr(args, 'save_raw', False):
+            if flows[1].shape != (2, *truth.shape) or flows[2].shape != truth.shape:
+                raise ValueError(f'Unexpected Cellpose raw output shapes for {sid}')
+            np.savez_compressed(output / 'raw_outputs' / f'{sid}.npz',
+                                flow=flows[1].astype(np.float32),
+                                cellprob=flows[2].astype(np.float32))
         pred = compact_labels(pred)
         if pred.shape != truth.shape:
             raise ValueError(f"Prediction shape mismatch for {sid}")
@@ -268,6 +264,7 @@ def main():
     prepare.add_argument("--output", default="data/processed/paper-bright")
     prepare.add_argument("--polarity", choices=("bright", "dark"), default="bright")
     prepare.add_argument("--split-seed", type=int, default=42)
+    prepare.add_argument("--label-policy", choices=("released", "connected_uint16"), default="released")
     check = commands.add_parser("check-data")
     check.add_argument("--manifest", required=True)
     run = commands.add_parser("run")
@@ -283,6 +280,7 @@ def main():
     run.add_argument("--jeffries-gt", choices=("raw", "processed"), default="processed")
     run.add_argument("--cpu", action="store_true")
     run.add_argument("--float32", action="store_true")
+    run.add_argument("--save-raw", action="store_true", help="Save foreground scores and flow fields")
     run.add_argument("--limit-test-images", type=int, default=0, help="Smoke test only; excluded from paper comparisons")
     compare = commands.add_parser("compare")
     compare.add_argument("--results", default="outputs/baselines")
@@ -300,7 +298,7 @@ def main():
         print(json.dumps(environment(), indent=2))
         print("Cellpose imports and augmentation construction passed")
     elif args.command == "prepare":
-        prepare_dataset(args.archive, args.output, args.polarity, args.split_seed)
+        prepare_dataset(args.archive, args.output, args.polarity, args.split_seed, args.label_policy)
     elif args.command == "check-data":
         manifest, _, _ = load_manifest(args.manifest)
         print(f"Verified all files; {len(manifest['records'])} images / {len(manifest['test'])} test")

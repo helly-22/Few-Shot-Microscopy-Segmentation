@@ -12,6 +12,7 @@ dependencies = ["numpy>=1.24", "scipy>=1.10", "torch>=2.1"]
 [project.optional-dependencies]
 test = ["pytest>=8"]
 data = ["Pillow>=10", "tifffile>=2024.8.30", "scikit-image>=0.24"]
+diagnostic = ["Pillow>=10", "tifffile>=2024.8.30", "scikit-image>=0.24", "matplotlib>=3.8", "opencv-python-headless==4.10.0.84", "pandas>=2"]
 
 [project.scripts]
 voron-baseline = "voron_matsam.baseline:main"

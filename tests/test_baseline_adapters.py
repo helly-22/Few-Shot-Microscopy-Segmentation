@@ -22,12 +22,21 @@ def limited_threads():
 
 def test_unet_odd_shapes_loss_and_gradient(limited_threads):
     model = UNet(base=2)
-    x = torch.randn(1,3,33,49)
+    # Keep ReLUs active so this tests gradient propagation rather than whether
+    # random initialization happens to leave both final feature channels dead.
+    with torch.no_grad():
+        for layer in model.modules():
+            if isinstance(layer, (torch.nn.Conv2d, torch.nn.ConvTranspose2d)):
+                layer.weight.fill_(.01)
+                if layer.bias is not None:
+                    layer.bias.fill_(.1)
+    x = torch.rand(1,3,33,49, generator=torch.Generator().manual_seed(0))
     prediction = model(x)
     assert prediction.shape == (1,1,33,49)
     loss = segmentation_loss(prediction, torch.ones_like(prediction))
     loss.backward()
     assert torch.isfinite(loss) and model.output.weight.grad.abs().sum() > 0
+    assert model.down[0][0].weight.grad.abs().sum() > 0
 
 
 def test_tiling_covers_small_images_and_uneven_edges(limited_threads):

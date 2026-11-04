@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Run in a Unity interactive CPU allocation after copying the project to /work.
-set -euo pipefail
+set -eo pipefail
+if ! type module >/dev/null 2>&1; then
+    source /etc/profile
+fi
+set -u
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ENV_PREFIX="${ENV_PREFIX:-$PROJECT_ROOT/.hpc-env}"
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$PROJECT_ROOT/.cache/pip}"

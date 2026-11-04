@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=grain-baseline
-#SBATCH --partition=gpu
+#SBATCH --partition=gpu-highvram
 #SBATCH --gpus=1
 #SBATCH --constraint=a40|a100|l40s|h100
 #SBATCH --cpus-per-task=8
