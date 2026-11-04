@@ -4,6 +4,7 @@ No new jobs are submitted. Run from the local project after creating
 outputs/runtime/unity-checklist.json. Uses the user's existing ssh unity alias.
 """
 import datetime
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -39,6 +40,15 @@ def ssh(command):
 
 
 def main():
+    global METADATA, LOG
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--metadata', type=Path, default=METADATA)
+    args = parser.parse_args()
+    METADATA = args.metadata.resolve()
+    if not METADATA.is_relative_to(ROOT):
+        raise ValueError('Monitor metadata must stay inside this workspace')
+    if METADATA.name != 'unity-checklist.json':
+        LOG = METADATA.with_name(METADATA.stem + '-watch.log')
     metadata = json.loads(METADATA.read_text())
     jobs = metadata['jobs']
     run_root = metadata['run_root']
@@ -82,13 +92,19 @@ def main():
     else:
         update(watcher_status='stopped_24_hour_timeout')
         return
-    remote_archive = run_root + '/checklist_results.zip'
+    archive_filename = metadata.get('archive_filename', 'checklist_results.zip')
+    if not re.fullmatch(r'[A-Za-z0-9_-]+\.zip', archive_filename):
+        raise ValueError('Unexpected report archive filename')
+    remote_archive = run_root + '/' + archive_filename
     expected = ssh('sha256sum ' + remote_archive).split()[0]
     if not re.fullmatch(r'[a-f0-9]{64}', expected):
         raise ValueError('Invalid remote checksum')
-    destination = ROOT / 'outputs/checklist_results' / run_root.rsplit('/', 1)[1]
+    local_base = (ROOT / metadata.get('local_results_directory', 'outputs/checklist_results')).resolve()
+    if not local_base.is_relative_to(ROOT / 'outputs'):
+        raise ValueError('Report destination must remain inside workspace outputs')
+    destination = local_base / run_root.rsplit('/', 1)[1]
     destination.mkdir(parents=True, exist_ok=True)
-    temporary = destination / 'checklist_results.download'
+    temporary = destination / (archive_filename + '.download')
     subprocess.run(['scp', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15',
                     'unity:' + remote_archive, str(temporary)], check=True, timeout=600)
     digest = hashlib.sha256()
@@ -98,7 +114,7 @@ def main():
     actual = digest.hexdigest()
     if actual != expected:
         raise ValueError('Downloaded report checksum differs')
-    archive = destination / 'checklist_results.zip'
+    archive = destination / archive_filename
     if archive.exists() and hashlib.sha256(archive.read_bytes()).hexdigest() != actual:
         raise FileExistsError('A different report archive already exists')
     temporary.replace(archive)

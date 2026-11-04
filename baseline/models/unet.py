@@ -1,4 +1,4 @@
-"""Four-level U-Net trained on grain interiors, followed by distance watershed."""
+"""Configurable U-Net trained on grain interiors, with tiled prediction helpers."""
 
 from pathlib import Path
 import time
@@ -19,19 +19,21 @@ class DoubleConv(nn.Sequential):
 
 
 class UNet(nn.Module):
-    def __init__(self, base=32):
+    def __init__(self, base=32, levels=5):
         super().__init__()
-        widths = [base * 2**i for i in range(5)]
+        if levels < 2:
+            raise ValueError('Need at least two feature levels')
+        widths = [base * 2**i for i in range(levels)]
         self.down = nn.ModuleList(DoubleConv(cin, cout) for cin, cout in zip([3]+widths[:-1], widths))
-        self.up = nn.ModuleList(nn.ConvTranspose2d(widths[i], widths[i-1], 2, stride=2) for i in range(4, 0, -1))
-        self.merge = nn.ModuleList(DoubleConv(widths[i], widths[i-1]) for i in range(4, 0, -1))
+        self.up = nn.ModuleList(nn.ConvTranspose2d(widths[i], widths[i-1], 2, stride=2) for i in range(levels-1, 0, -1))
+        self.merge = nn.ModuleList(DoubleConv(widths[i], widths[i-1]) for i in range(levels-1, 0, -1))
         self.output = nn.Conv2d(base, 1, 1)
 
     def forward(self, x):
         skip = []
         for i, layer in enumerate(self.down):
             x = layer(x)
-            if i < 4:
+            if i < len(self.down)-1:
                 skip.append(x)
                 x = F.max_pool2d(x, 2)
         for up, merge, residual in zip(self.up, self.merge, reversed(skip)):
@@ -42,11 +44,11 @@ class UNet(nn.Module):
         return self.output(x)
 
 
-def random_batch(data, batch_size, patch, rng):
+def random_batch(data, batch_size, patch, rng, normalized=False):
     images, masks = [], []
     for _ in range(batch_size):
         image, mask = data[int(rng.integers(len(data)))]
-        image = normalize(image)
+        image = image if normalized else normalize(image)
         h, w = mask.shape
         pad = ((0, max(0, patch-h)), (0, max(0, patch-w)))
         image = np.pad(image, pad + ((0, 0),), mode='edge')

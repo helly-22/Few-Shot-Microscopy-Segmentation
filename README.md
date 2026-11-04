@@ -16,6 +16,11 @@ fell below the paper; the new float32 2-shot control reached AP50 0.6565
 Old runs remain available under their original protocol. Local tests
 include both numerical checks and mock-model orchestration checks.
 
+The [other-model benchmark](docs/OTHER_MODELS.md) now has completed connected-component,
+watershed, MatSAM ViT-L and U-Net results on the same test set. The shared U-Net
+checkpoint scores AP50 0.5354 with morphology and 0.5858 with watershed. StarDist
+is training on Unity.
+
 ## Comparison baselines
 
 **Limited compute:** start with the [small U-Net + watershed run](baseline/SMALL_MODEL.md)

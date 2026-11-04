@@ -80,15 +80,15 @@ must not be used to choose between them.
 | 6 | Fresh 2-shot training, foreground and flow inspection | Both precision fits and galleries complete; manual gallery review pending |
 | 7 | Validation-only reconstruction/normalization ablations | Complete for both fits and the inference-precision control; test settings unchanged |
 | 8 | Independent 4/10/20/30 fits | Original protocol complete; validated protocol waits for Cellpose gate |
-| 9 | Four-stage U-Net, BCE+Dice, 30 images | Pending; explicitly document unspecified settings as approximations |
-| 10 | Official MatSAM, SAM ViT-L zero-shot | Pending; current SAM2 adapter is a different method |
-| 11 | Connected-component classical baseline | Pending on common protocol |
-| 12 | Marker-controlled watershed | Existing adapter; common-protocol validation/evaluation pending |
-| 13 | U-Net + watershed | Pending; reuse the exact plain-U-Net checkpoint |
-| 14 | StarDist 2D | Existing adapter; paper-independent extended experiment pending |
-| 15 | Evaluate every method through common evaluator | Cellpose wired; remaining model integrations pending |
+| 9 | Four-stage U-Net, BCE+Dice, 30 images | Complete; AP50 0.5354, documented reconstruction |
+| 10 | Official MatSAM, SAM ViT-L zero-shot | Complete; AP50 0.5192; recipe deviations recorded, separate from SAM2 |
+| 11 | Connected-component classical baseline | Complete; AP50 0.2750 on common protocol |
+| 12 | Marker-controlled watershed | Complete; AP50 0.1774 on common protocol |
+| 13 | U-Net + watershed | Complete; AP50 0.5858, exact same checkpoint as plain U-Net |
+| 14 | StarDist 2D | Full 25-image development and 30-image final refit running on Unity |
+| 15 | Evaluate every method through common evaluator | Completed alternatives use common metrics; StarDist uses same pipeline when finished |
 | 16 | Superimposed Jeffries target 60 as primary | Implemented; preserve measurement/representation audit |
-| 17 | Per-image galleries and uncertainty | New galleries and paired uncertainty generated; manual review pending |
+| 17 | Per-image galleries and uncertainty | Cellpose and five alternatives generated; representative figures checked, exhaustive review pending |
 | 18 | Additional independent training seeds | Pending after protocol settles |
 | 19 | Add Voronoi regularization | Deferred until all prerequisite controls are reviewed |
 
