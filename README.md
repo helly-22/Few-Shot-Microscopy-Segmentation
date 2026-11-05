@@ -19,7 +19,7 @@ include both numerical checks and mock-model orchestration checks.
 The [other-model benchmark](docs/OTHER_MODELS.md) now has completed connected-component,
 watershed, MatSAM ViT-L and U-Net results on the same test set. The shared U-Net
 checkpoint scores AP50 0.5354 with morphology and 0.5858 with watershed. StarDist
-is training on Unity.
+completed at AP50 0.6481. The final comparison report has been generated and downloaded.
 
 ## Comparison baselines
 

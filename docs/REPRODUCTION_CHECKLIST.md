@@ -85,8 +85,8 @@ must not be used to choose between them.
 | 11 | Connected-component classical baseline | Complete; AP50 0.2750 on common protocol |
 | 12 | Marker-controlled watershed | Complete; AP50 0.1774 on common protocol |
 | 13 | U-Net + watershed | Complete; AP50 0.5858, exact same checkpoint as plain U-Net |
-| 14 | StarDist 2D | Full 25-image development and 30-image final refit running on Unity |
-| 15 | Evaluate every method through common evaluator | Completed alternatives use common metrics; StarDist uses same pipeline when finished |
+| 14 | StarDist 2D | Complete; AP50 0.6481 after 25-image development and 30-image final refit |
+| 15 | Evaluate every method through common evaluator | All six alternatives and the Cellpose reference use the common evaluator |
 | 16 | Superimposed Jeffries target 60 as primary | Implemented; preserve measurement/representation audit |
 | 17 | Per-image galleries and uncertainty | Cellpose and five alternatives generated; representative figures checked, exhaustive review pending |
 | 18 | Additional independent training seeds | Pending after protocol settles |

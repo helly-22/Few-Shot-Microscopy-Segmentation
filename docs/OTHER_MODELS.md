@@ -15,6 +15,7 @@ author splits, physical scale, and some published inference settings remain unkn
 | MatSAM / SAM ViT-L reconstruction | 0.5192 | 0.4933-0.5457 | 0.2700 | 0.7095 | +39.9 | 3.38% |
 | U-Net + morphology, 30-image refit | 0.5354 | 0.5039-0.5675 | 0.2937 | 0.7750 | -67.6 | 4.85% |
 | Same U-Net + watershed | 0.5858 | 0.5635-0.6077 | 0.3066 | 0.8107 | +29.8 | 1.87% |
+| StarDist, 30-image refit | 0.6481 | 0.6269-0.6669 | 0.3640 | 0.7292 | -36.0 | 2.20% |
 | Cellpose-SAM 2-shot float32 reference | 0.6565 | 0.6329-0.6784 | 0.3758 | 0.7814 | -8.2 | 1.12% |
 
 These intervals resample ten whole images, 20,000 times with seed 20261104.
@@ -68,7 +69,14 @@ All methods save integer predictions, rendered binary masks, per-image AP,
 boundary F1, counts, PQ, matched Dice, foreground Dice, split/merge rates and
 Jeffries measurements. Matched Dice excludes unmatched objects; interpret it
 with PQ and count error. Classical, MatSAM and both U-Net results completed on
-Unity. StarDist is training; its final results are not yet available.
+Unity. StarDist also completed its 400-epoch development fit and 400-epoch
+30-image final refit. All six alternatives and the Cellpose reference are now
+available on the shared ten-image test set.
+
+Cellpose minus StarDist paired AP50 difference is 0.00848, with a whole-image
+bootstrap 95% interval of -0.00736 to 0.02350 (20,000 draws, seed 20261104).
+The paired t interval is -0.01042 to 0.02738. This single-seed comparison does
+not establish a reliable ranking between them; their annotation budgets also differ.
 
 The two U-Net outputs share final checkpoint SHA-256
 `2fb7b088b05aee93f21b8989a1b7bbf038cd66e772985f34a7d6f595cc96a0c6`.
@@ -114,17 +122,17 @@ isolated environment are added to `LD_LIBRARY_PATH` in that script.
 Current run root: `outputs/other-models-20261104` on Unity. Completed per-image
 JSONs have been downloaded under local `outputs/other_models/`. The report
 builder `scripts/report_other_models.py` produces a common comparison, per-image
-CSV and ten-image galleries for every completed method. A partial report is
-available before neural training ends; the complete report waits for both jobs.
+CSV and ten-image galleries for every completed method. The complete report
+finished successfully after both neural jobs and was downloaded with checksum verification.
 All datasets, weights, predictions and generated reports remain excluded from Git.
 
-Local current HTML report:
-`outputs/other_models/current/other-models-20261104/report/report.html`.
-It contains all five completed alternatives, the Cellpose reference, per-image
-CSVs, bootstrap intervals and 50 four-panel figures. Representative MatSAM,
+Local final HTML report:
+`outputs/other_models/final/other-models-20261104/report/report.html`.
+It contains all six completed alternatives, the Cellpose reference, per-image
+CSVs, bootstrap intervals and 60 four-panel figures. Representative MatSAM,
 U-Net and watershed figures were visually checked; exhaustive manual review is
 still pending. Job IDs: classical 66701648, U-Net 66701958, MatSAM 66701964
-(completed), StarDist 66701965 (running), final report 66702548 (dependent).
+(completed), StarDist 66701965 and final report 66702548 (both completed, exit 0:0).
 
 The configurable watcher monitors only recorded jobs and downloads the complete,
 checksummed report after completion:
